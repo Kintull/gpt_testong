@@ -3,3 +3,5 @@ export TESTONG_DEV_GENERATED_MODULE_TEST_PATH=/home/username/gpt_testong/priv/ge
 
 export TESTONG_TEST_GENERATED_MODULE_PATH=/home/username/gpt_testong/priv/generated_project_test/test/generated_module_test.exs
 export TESTONG_TEST_GENERATED_MODULE_TEST_PATHssssS=/home/username/gpt_testong/priv/generated_project_test/test/generated_module_test.exs
+
+export TESTONG_OPEN_AI_SECRET_KEY=

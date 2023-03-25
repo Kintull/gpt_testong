@@ -1,8 +1,7 @@
 defmodule GeneratedModuleTest do
   use ExUnit.Case
-  doctest GeneratedProject
 
-  test "greets the world" do
-    assert GeneratedProject.hello() == :world
+  test "sum/2 success" do
+    assert GeneratedModule.roman_to_integer("XXL") == 70
   end
 end

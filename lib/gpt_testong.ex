@@ -11,9 +11,10 @@ defmodule GptTestong do
 
     use Tesla
 
-    plug(Tesla.Middleware.BaseUrl, "https://api.openai.com/v1")
+    @open_ai_secret_key Application.compile_env(:gpt_testong, :open_ai_secret_key)
+    plug(Tesla.Middleware.BaseUrl, "https://api.openai.com/")
     plug(Tesla.Middleware.JSON)
-    plug(Tesla.Middleware.BearerAuth, System.get_env("GPT_SECRET_KEY"))
+    plug(Tesla.Middleware.BearerAuth, token: @open_ai_secret_key)
 
     @doc """
     Makes a request to OpenAI GPT API using secret key
@@ -22,15 +23,27 @@ defmodule GptTestong do
     """
     @spec make_gpt_request(binary) :: {:ok, binary} | {:error, binary}
     def make_gpt_request(request_body) do
-      resp = Tesla.post!("/engines/davinci/completions", %{prompt: request_body})
+      body = %{
+       prompt: request_body,
+       temperature: 0.1,
+       top_p: 1,
+       max_tokens: 2000,
+       stop: "",
+       model: "text-davinci-003"
+      }
+      resp = post!("/v1/completions", body)
 
       case resp do
         %{status: 200, body: body} ->
-          {:ok, body}
+          {:ok, Enum.at(body["choices"], 0)["text"]}
 
         %{status: status, body: body} ->
           {:error, "GPT API request failed with status code #{status} and body #{body}"}
       end
+    end
+
+    def list_models() do
+      get!("/v1/models").body["data"] |> Enum.map(fn model -> model["id"] end)
     end
   end
 
@@ -48,8 +61,9 @@ defmodule GptTestong do
    prompt contains a request to generate the minimum amount of code so that the test passes, asking to correct the errors until the test passes
    prompt as  a format GPT should follow so that our application can extract produced module from the response
   """
-  @spec send_test_request(binary) :: nil
-  def send_test_request(test_module_path) do
+  @spec send_test_request() :: :ok
+  def send_test_request do
+    test_module_path = Application.get_env(:gpt_testong, :generated_module_test_path)
     test_body = "Test body: " <> parse_test_body(test_module_path)
 
     %{test_successful: test_successful, test_stacktrace: test_stacktrace} =
@@ -62,7 +76,7 @@ defmodule GptTestong do
       "Was test successful? #{test_successful}\nTest failure stacktrace: #{test_stacktrace}"
 
     prompt =
-      "Rewrite existing Elixir code module until the test is successful, use test failure stacktrace to resolve the errors. Write the minimum requited amount of code."
+      "Rewrite existing Elixir code module until the test is successful, use test failure stacktrace to resolve the errors. Recognize a problem in the test and make a generic solution that would work with similar cases. Write as much code as you need."
 
     format = "Use this format as an answer: @@@#MODULE_START\n<insert module code here>\n@@@"
     full_promt = build_promt([prompt, test_results, test_body, generated_code, format])
