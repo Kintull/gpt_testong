@@ -29,7 +29,7 @@ defmodule GptTestong do
        top_p: 1,
        max_tokens: 2000,
        stop: "",
-       model: "text-davinci-003"
+       model: "gpt-3.5-turbo-instruct"
       }
       resp = post!("/v1/completions", body)
 
